@@ -1,0 +1,60 @@
+- name: create an ubuntu instance on EC2
+  hosts: localhost
+
+  tasks:
+   
+  - name: start the instance
+    amazon.aws.ec2_instance:
+      name: ansible
+      image_id: ami-076bdd070268f9b8d 
+      key_name: ansible
+      region: eu-central-1
+      availability_zone: eu-central-1c
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      instance_type: t2.small
+      security_group: default 
+      tags:
+        Env: ansible
+    register: ec2
+
+  - name: Pause for 30 sec for instance to get running 
+    ansible.builtin.pause:
+      seconds: 30
+ 
+  - name: Gather information about running instances
+    ec2_instance_info:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      region: eu-central-1
+      filters:
+          instance-state-name: running
+          "tag:Env": ansible
+
+    register: result
+
+  - name: instances ID
+    debug:
+      msg: "ID: {{ item.instance_id }} - State: {{ item.state.name }} - Public DNS: {{ item.public_dns_name }}"
+    loop: "{{ result.instances }}"  
+
+  - name: Pause for 20 sec for ssh to be ready
+    ansible.builtin.pause:
+      seconds: 20 
+
+  - name: Wait for the instances to boot by checking the ssh port
+    wait_for: host={{item.public_dns_name}} port=22 delay=10 timeout=30 state=started
+    loop: "{{ result.instances }}" 
+    register: output
+
+  - name: See if aws_invetory is fine..,
+    debug:
+      var: output 
+
+ 
+ # - name: Initialise aws_ec2_module
+ #   ansible.builtin.shell: ansible-inventory --vault-password-file /home/ansible/vaultpwd -i aws_ec2.yaml --list 
+ #   register: output
+ # - name: See if aws_invetory is fine..,
+ #   debug:
+ #     var: output 

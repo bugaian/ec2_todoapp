@@ -1,0 +1,70 @@
+---
+- hosts: aws_ec2
+  become: true
+  user: ubuntu
+  gather_facts: true 
+  vars_files:
+      -  group_vars/all/keys.yml
+
+  tasks:
+    - set_fact:
+        APP_EXTERNAL_PORT: "{{ (lookup('template', './inventory/aws_ec2.yml')|from_yaml).APP_EXTERNAL_PORT }}"
+    - name: Create and run a service
+      community.docker.docker_compose: 
+        project_name: todoapp
+        remove_orphans: true
+        definition:
+          version: '2'
+          services:
+            mysql:
+              image: mysql:5.7 
+              volumes: 
+                - todo-mysql-data:/var/lib/mysql
+              environment:
+                    MYSQL_ROOT_PASSWORD: "{{ MYSQL_ROOT_PASSWORD }}" 
+                    MYSQL_DATABASE: "{{ MYSQL_DATABASE }}"
+              healthcheck:
+                   test: "exit 0" 
+            app:
+              image: bugaian/getting-started
+              ports:
+                 - "{{APP_EXTERNAL_PORT}}" 
+              depends_on:
+                    mysql: 
+                      condition: service_healthy
+              working_dir: /app
+              
+              environment:
+                MYSQL_HOST: "{{ MYSQL_HOST }}" 
+                MYSQL_USER: "{{ MYSQL_USER }}"
+                MYSQL_PASSWORD: "{{ MYSQL_PASSWORD }}"
+                MYSQL_DB: "{{ MYSQL_DB }}"
+ 
+          volumes:
+            todo-mysql-data:
+      register: output
+
+    - debug:
+        var: output
+    
+    - name: Test web to file
+      ansible.builtin.get_url:
+          url: " {{ 'http://'+ inventory_hostname +':63000' }}" 
+          dest: ./test.result
+      register: output
+      delegate_to: localhost
+
+    - name: Get http curl result 
+      debug:
+        var: output 
+
+    - name: To test app by human with curl http://hostname:63000 se hostname bellow from an external ip 
+      debug:
+        msg: " {{ 'curl http://'+ inventory_hostname +':63000' }}" 
+
+
+    
+  #  - ansible.builtin.assert:
+   #     that:
+    #      - "app.todoapp_app_1.state.running"
+     #     - "db.todoapp_db_1.state.running"  
