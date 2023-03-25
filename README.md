@@ -2,6 +2,8 @@
 
 main.yaml script will deploy a demo nodejs app to an ec2 intance and will check if its running
 
+Test this on local/hyperv image roky 172.23.146.92/20 /home/ansible/ansiblecvc/ec2_todoapp user: ansible
+
 - create_ubuntu_ec2_no_sg.yaml -- will create an instance with no sg(in case you already have an sg)
 - create_ubuntu_ec2_with_sg.yaml -- will deploy a new sg and open specific ports
 - deploy_docker.yaml -- will deploy docker and make sure all permisions are OK
