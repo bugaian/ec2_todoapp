@@ -15,7 +15,12 @@ You shoudl have all plugins and packages required to manage an ec2 instance from
 - boto3
 - ansible
 - ansible aws plugins
-- ansible roles mentioned in playbooks
+- ansible roles mentioned in playbooks -- to install roles use:
+ansible-galaxy install geerlingguy.pip
+ansible-galaxy install geerlingguy.docker
+
+
+
 
 Configure aws via aws configure and also configure vault and store your aws keys in group_vars/all folder.
 
